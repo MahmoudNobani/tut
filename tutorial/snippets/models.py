@@ -1,6 +1,5 @@
 from django.db import models
-from pygments.lexers import get_all_lexers
-from pygments.styles import get_all_styles
+from django.contrib.auth.models import User
 
 
 
@@ -17,6 +16,8 @@ class Snippet(models.Model):
     code = models.TextField()
     usable = models.BooleanField(default=False)
     language = models.CharField(choices=Lang.choices, max_length=100,default=Lang.PYTHON)
+    owner = models.ForeignKey(User, related_name='snippets', on_delete=models.CASCADE)
+
 
     class Meta:
         ordering = ['created']
