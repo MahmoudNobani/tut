@@ -15,44 +15,89 @@ from django.contrib.auth.models import User
 from rest_framework import permissions
 from snippets.permissions import IsOwnerOrReadOnly
 from rest_framework.reverse import reverse
+from rest_framework import viewsets
+
 
 
 # class snippet_list(ModelViewSet):
 #     serializer_class = SnippetSerializer
 #     queryset = Snippet.objects.all()
 
-class UserList(generics.ListAPIView):
+class UserViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    This viewset automatically provides `list` and `retrieve` actions. COMBINE THE LIST AND DETAIL
+    READONY = READ ONLY OPERATIONS
+    """
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
+class SnippetViewSet(viewsets.ModelViewSet):
+    """
+    This viewset automatically provides `list`, `create`, `retrieve`,
+    `update` and `destroy` actions.
 
-class UserDetail(generics.RetrieveAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-
-#please check out, intersting
-
-class snippet_list(generics.ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly,
-                      IsOwnerOrReadOnly]
+    Additionally we also provide an extra `highlight` action.
+    """
     queryset = Snippet.objects.all()
     serializer_class = SnippetSerializer
-
-    def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
-
-
-class snippet_detail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly,
-                      IsOwnerOrReadOnly]
-    queryset = Snippet.objects.all()
-    serializer_class = SnippetSerializer
-
-
+                          IsOwnerOrReadOnly]
+    
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+        # print(args)
+        # print(kwargs)
+        # print(User.objects.get(username=self.request.data['owner']))
+        try:
+            serializer.save(owner=User.objects.get(username=self.request.data['owner']))
+        except:
+            serializer.save(owner=self.request.user)
+            #super().perform_create(serializer)
+
+# FOR ENTRYPOINT
+@api_view(['GET'])
+def api_root(request, format=None):
+    return Response({
+        'users': reverse('user-list', request=request, format=format),
+        'snippets': reverse('snippet-list', request=request, format=format)
+    })
 
 
+#USING THE GENERIC APIVIEW WITH MIXIN, BUILT INT
+# class UserList(generics.ListAPIView):
+#     queryset = User.objects.all()
+#     serializer_class = UserSerializer
+   
+
+
+# class UserDetail(generics.RetrieveAPIView):
+#     queryset = User.objects.all()
+#     serializer_class = UserSerializer
+#     lookup_field = 'username' #to change the field we lookup, both this and the url must be the name of the field
+
+# #please check out, intersting
+
+# class snippet_list(generics.ListCreateAPIView):
+#     permission_classes = [permissions.IsAuthenticatedOrReadOnly,
+#                       IsOwnerOrReadOnly]
+#     queryset = Snippet.objects.all()
+#     serializer_class = SnippetSerializer
+
+#     def perform_create(self, serializer):
+#         serializer.save(owner=self.request.user)
+
+
+# class snippet_detail(generics.RetrieveUpdateDestroyAPIView):
+#     permission_classes = [permissions.IsAuthenticatedOrReadOnly,
+#                       IsOwnerOrReadOnly]
+#     queryset = Snippet.objects.all()
+#     serializer_class = SnippetSerializer
+
+
+#     def perform_create(self, serializer):
+#         serializer.save(owner=self.request.user)
+
+
+#using normal APIVIEW
 # class snippet_list(APIView):
 #     """
 #     List all snippets, or create a new snippet.
@@ -97,6 +142,8 @@ class snippet_detail(generics.RetrieveUpdateDestroyAPIView):
 #         snippet.delete()
 #         return Response(status=status.HTTP_204_NO_CONTENT)
 
+
+#USING THE GENERIC APIVIEW WITH MIXIN
 # class snippet_list(mixins.ListModelMixin, mixins.CreateModelMixin, GenericAPIView):
 
 #     serializer_class = SnippetSerializer
@@ -124,6 +171,7 @@ class snippet_detail(generics.RetrieveUpdateDestroyAPIView):
 #     def delete(self, request, *args, **kwargs):
 #         return self.destroy(request, *args, **kwargs)
 
+#USING THE DECORATOR
 # @api_view(['GET','POST'])
 # def snippet_list(request,format=None):
 #     """

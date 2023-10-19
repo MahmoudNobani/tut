@@ -1,7 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-
+def user():
+    return User.objects.get_or_create(pk=1,username="m")
 
 class Snippet(models.Model):
 
@@ -16,8 +17,9 @@ class Snippet(models.Model):
     code = models.TextField()
     usable = models.BooleanField(default=False)
     language = models.CharField(choices=Lang.choices, max_length=100,default=Lang.PYTHON)
-    owner = models.ForeignKey(User, related_name='snippets', on_delete=models.CASCADE)
+    owner = models.ForeignKey(User, related_name='snippets', on_delete=models.CASCADE,default=user()[0].pk)
 
 
     class Meta:
         ordering = ['created']
+
